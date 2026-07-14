@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 运行数据（本地生成，不上传）
+history_data/
+gold_price.csv
+
+# IDE
+.claude/
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>黄金价格实时看板</title>
+
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#0f1923">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f1923; color: #e0e0e0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 30px 20px 50px;
+  }
+
+  .topbar {
+    width: 100%; max-width: 1100px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px; margin-bottom: 10px;
+  }
+  .topbar h1 {
+    font-size: 28px; font-weight: 700; letter-spacing: 2px;
+    background: linear-gradient(135deg, #f0c040, #d4942b);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .topbar .meta { font-size: 13px; color: #5a6e7e; }
+
+  .btn-refresh {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 24px; border: 1px solid #f0c040; border-radius: 8px;
+    background: transparent; color: #f0c040;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    transition: all 0.25s; letter-spacing: 1px;
+  }
+  .btn-refresh:hover { background: #f0c040; color: #0f1923; }
+  .btn-refresh.spinning .icon { animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status-row {
+    width: 100%; max-width: 1100px;
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 24px; font-size: 13px; color: #5a6e7e;
+  }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:#555; transition:background 0.3s; }
+  .status-dot.ok { background:#00d4a5; box-shadow:0 0 8px #00d4a5; }
+  .status-dot.err { background:#ff4757; box-shadow:0 0 8px #ff4757; }
+
+  /* 二维码 */
+  .qr-section {
+    width: 100%; max-width: 1100px;
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 24px; padding: 14px 18px;
+    background: #1a2732; border: 1px dashed #354555;
+    border-radius: 10px;
+  }
+  .qr-section .qr-label { font-size: 13px; color: #7a8e9e; line-height: 1.6; }
+  .qr-section .qr-label strong { color: #f0c040; }
+  #qrcode canvas { display: block; border-radius: 6px; }
+  #phoneUrl { color: #f0c040; font-size: 13px; word-break: break-all; }
+
+  .cards {
+    width: 100%; max-width: 1100px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 30px;
+  }
+  .card {
+    background: #1a2732; border: 1px solid #253340;
+    border-radius: 14px; padding: 22px 20px 18px;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .card.gc::before    { background: linear-gradient(90deg,#f0c040,#d4942b); }
+  .card.au::before    { background: linear-gradient(90deg,#e85050,#c0392b); }
+  .card.etf::before   { background: linear-gradient(90deg,#4da6ff,#2979ff); }
+  .card .sym  { font-size:11px; letter-spacing:2px; color:#5a6e7e; margin-bottom:4px; }
+  .card .name { font-size:18px; font-weight:600; margin-bottom:12px; color:#ccc; }
+  .card .price { font-size:38px; font-weight:700; color:#fff; }
+  .card .price .unit { font-size:14px; color:#6b7c8a; font-weight:400; margin-left:2px; }
+  .card .change { display:flex; align-items:center; gap:10px; margin-top:8px; font-size:15px; font-weight:600; }
+  .card .change .up   { color:#ff4757; }
+  .card .change .down { color:#2ed573; }
+  .card .change .flat { color:#6b7c8a; }
+
+  .charts {
+    width: 100%; max-width: 1100px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+  .chart-block {
+    background: #1a2732; border:1px solid #253340;
+    border-radius: 14px; padding: 18px 18px 12px;
+  }
+  .chart-header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; margin-bottom: 6px;
+  }
+  .chart-header .title { font-size: 16px; font-weight: 600; color: #ccc; }
+  .period-btns { display: flex; gap: 4px; }
+  .period-btns button {
+    padding: 5px 14px; border-radius: 5px; border:1px solid #354555;
+    background: transparent; color: #7a8e9e; font-size: 12px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .period-btns button.active {
+    background: #f0c040; color: #0f1923; border-color: #f0c040; font-weight: 600;
+  }
+  .period-btns button:hover:not(.active) { border-color: #5a7e8e; color: #ccc; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .chart-wrap canvas { width: 100% !important; }
+
+  .footer { margin-top: 30px; font-size: 12px; color: #3d4f5e; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>GOLD PRICE · 实时金价看板</h1>
+    <div class="meta">日线数据本地存储 · 手动更新</div>
+  </div>
+  <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">
+    <span class="icon">🔄</span> 更新数据
+  </button>
+</div>
+
+<div class="status-row">
+  <span class="status-dot" id="statusDot"></span>
+  <span id="statusText">就绪</span>
+</div>
+
+<!-- 📱 手机扫码区 -->
+<div class="qr-section" id="qrSection">
+  <div id="qrcode"></div>
+  <div class="qr-label" id="qrLabel">
+    <strong>📱 手机查看</strong><br>
+    同一WiFi下用手机扫码，或浏览器打开：<br>
+    <span id="phoneUrl">加载中...</span>
+  </div>
+</div>
+
+<div class="cards" id="cards">
+  <div class="card gc" id="card-GC">
+    <div class="sym">COMEX · GC</div>
+    <div class="name">国际现货黄金</div>
+    <div class="price">--<span class="unit">美元/盎司</span></div>
+    <div class="change">--</div>
+  </div>
+  <div class="card au" id="card-AU">
+    <div class="sym">SHFE · AU</div>
+    <div class="name">沪金期货主力</div>
+    <div class="price">--<span class="unit">元/克</span></div>
+    <div class="change">--</div>
+  </div>
+  <div class="card etf" id="card-518880">
+    <div class="sym">SSE · 518880</div>
+    <div class="name">华安黄金ETF</div>
+    <div class="price">--<span class="unit">元/份</span></div>
+    <div class="change">--</div>
+  </div>
+</div>
+
+<div class="charts" id="charts"></div>
+
+<div class="footer">Powered by akshare · 数据本地存储</div>
+
+<script>
+const API_BASE = '';
+const SYMBOLS = [
+  { id:'GC',    name:'COMEX黄金',   unit:'美元/盎司', cardClass:'gc',    chartLabel:'国际金价 (美元/盎司)' },
+  { id:'AU',    name:'沪金主力',    unit:'元/克',     cardClass:'au',    chartLabel:'沪金期货 (元/克)' },
+  { id:'518880',name:'华安黄金ETF', unit:'元/份',     cardClass:'etf',   chartLabel:'黄金ETF (元/份)' },
+];
+const PERIODS = [
+  { label:'1个月', days:22 },
+  { label:'3个月', days:66 },
+  { label:'6个月', days:132 },
+];
+const DEFAULT_PERIOD = 1;
+
+const charts = {};
+const activePeriod = {};
+
+// ---- 二维码 ----
+async function setupQR() {
+  try {
+    const info = await (await fetch('/api/info')).json();
+    const url = `http://${info.local_ip}:${info.port}`;
+    document.getElementById('phoneUrl').textContent = url;
+    document.getElementById('qrcode').innerHTML = '';
+    new QRCode(document.getElementById('qrcode'), {
+      text: url, width: 100, height: 100,
+      colorDark: '#1a2732', colorLight: '#f0c040',
+    });
+  } catch(e) {
+    document.getElementById('qrSection').style.display = 'none';
+  }
+}
+
+// ---- 状态 ----
+function setStatus(ok, text) {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = 'status-dot ' + (ok ? 'ok' : 'err');
+  txt.textContent = text || (ok ? '就绪' : '错误');
+}
+
+async function apiGet(path) {
+  const resp = await fetch(API_BASE + path);
+  if (!resp.ok) throw new Error(`${path} → ${resp.status}`);
+  return resp.json();
+}
+
+async function apiPost(path) {
+  const resp = await fetch(API_BASE + path, { method:'POST' });
+  if (!resp.ok) throw new Error(`${path} → ${resp.status}`);
+  return resp.json();
+}
+
+function updateCards(dataList) {
+  dataList.forEach(item => {
+    const card = document.getElementById('card-' + item.symbol);
+    if (!card) return;
+    const priceEl = card.querySelector('.price');
+    const changeEl = card.querySelector('.change');
+    const unitEl = card.querySelector('.unit');
+    priceEl.childNodes[0].nodeValue = item.price.toFixed(2);
+    unitEl.textContent = item.unit;
+    const c = item.change, p = item.change_percent;
+    const isUp = c > 0, isDown = c < 0;
+    const cls = isUp ? 'up' : isDown ? 'down' : 'flat';
+    const arrow = isUp ? '▲' : isDown ? '▼' : '—';
+    const sign = isUp ? '+' : '';
+    changeEl.innerHTML = `<span class="${cls}">${arrow} ${sign}${c.toFixed(2)}</span> <span class="${cls}">${sign}${p.toFixed(2)}%</span>`;
+  });
+}
+
+// ---- 图表 ----
+function buildChartBlocks() {
+  const container = document.getElementById('charts');
+  container.innerHTML = '';
+  SYMBOLS.forEach(sym => {
+    activePeriod[sym.id] = DEFAULT_PERIOD;
+    const block = document.createElement('div');
+    block.className = 'chart-block';
+    block.innerHTML = `
+      <div class="chart-header">
+        <span class="title">📈 ${sym.name} · 日线</span>
+        <div class="period-btns" data-symbol="${sym.id}">
+          ${PERIODS.map((p,i) => `<button data-idx="${i}" class="${i===DEFAULT_PERIOD?'active':''}">${p.label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-${sym.id}"></canvas></div>`;
+    container.appendChild(block);
+    block.querySelectorAll('.period-btns button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        const symId = btn.parentElement.dataset.symbol;
+        activePeriod[symId] = idx;
+        btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadHistory(symId, PERIODS[idx].days);
+      });
+    });
+    const ctx = document.getElementById('chart-' + sym.id).getContext('2d');
+    const color = sym.id === 'GC' ? '#f0c040' : sym.id === 'AU' ? '#e85050' : '#4da6ff';
+    charts[sym.id] = new Chart(ctx, {
+      type: 'line',
+      data: { labels:[], datasets:[
+        { label:sym.chartLabel, data:[], borderColor:color, backgroundColor:color+'20', borderWidth:2, pointRadius:1.5, pointHoverRadius:5, fill:true, tension:0.1, yAxisID:'y' },
+        { label:'成交量', data:[], type:'bar', backgroundColor:'rgba(255,255,255,0.06)', yAxisID:'y1' }
+      ]},
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { labels:{ color:'#6b7c8a', usePointStyle:true, pointStyleWidth:8, padding:20, font:{size:11} } },
+          tooltip: {
+            backgroundColor:'#1a2732', borderColor:'#354555', borderWidth:1, titleColor:'#ccc', bodyColor:'#ccc',
+            callbacks: { label: ctx => ctx.datasetIndex===1 ? '成交量: '+(ctx.raw/10000).toFixed(1)+'万手' : ctx.dataset.label+': '+ctx.raw.toFixed(2) }
+          }
+        },
+        scales: {
+          x: { ticks:{ color:'#5a6e7e', maxTicksLimit:10, font:{size:10} }, grid:{ color:'rgba(255,255,255,0.03)' } },
+          y: { type:'linear', position:'left', ticks:{ color:'#7a8e9e', font:{size:10}, callback:v => v.toFixed(sym.id==='518880'?2:0) }, grid:{ color:'rgba(255,255,255,0.04)' } },
+          y1: { type:'linear', position:'right', ticks:{ color:'#5a6e7e', font:{size:9}, callback:v => (v/10000).toFixed(0)+'万' }, grid:{ display:false } },
+        },
+      },
+    });
+  });
+}
+
+async function loadHistory(symbol, days) {
+  try {
+    const json = await apiGet(`/api/history?symbol=${symbol}&days=${days}`);
+    const chart = charts[symbol];
+    if (!chart) return;
+    chart.data.labels = json.data.map(d => d.date);
+    chart.data.datasets[0].data = json.data.map(d => d.close);
+    chart.data.datasets[1].data = json.data.map(d => d.volume);
+    chart.update();
+  } catch(e) { console.error('加载日线失败:', symbol, e); }
+}
+
+// ---- 初始加载 & 刷新 ----
+async function loadAll() {
+  setStatus(false, '加载中...');
+  try {
+    const [current] = await Promise.all([
+      apiGet('/api/current'),
+      loadHistory('GC',     PERIODS[activePeriod['GC']].days),
+      loadHistory('AU',     PERIODS[activePeriod['AU']].days),
+      loadHistory('518880', PERIODS[activePeriod['518880']].days),
+    ]);
+    updateCards(current.data);
+    document.getElementById('statusText').textContent = '上次更新: ' + (current.update_time || '--');
+    setStatus(true, '');
+  } catch(e) { console.error(e); setStatus(false, '连接失败 — 请确认服务已启动'); }
+}
+
+async function refreshAll() {
+  const btn = document.getElementById('btnRefresh');
+  btn.classList.add('spinning'); btn.disabled = true;
+  setStatus(false, '正在拉取数据...');
+  try {
+    const result = await apiPost('/api/refresh');
+    if (result.success) {
+      updateCards(result.latest);
+      await Promise.all([
+        loadHistory('GC',     PERIODS[activePeriod['GC']].days),
+        loadHistory('AU',     PERIODS[activePeriod['AU']].days),
+        loadHistory('518880', PERIODS[activePeriod['518880']].days),
+      ]);
+      setStatus(true, '更新成功 — ' + result.update_time);
+    } else { setStatus(false, '更新失败: ' + (result.error || '未知错误')); }
+  } catch(e) { console.error(e); setStatus(false, '请求失败 — 请确认服务已启动'); }
+  finally { btn.classList.remove('spinning'); btn.disabled = false; }
+}
+
+// ---- 启动 ----
+setupQR();
+buildChartBlocks();
+loadAll();
+
+</script>
+</body>
+</html>
