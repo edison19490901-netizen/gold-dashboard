@@ -15,7 +15,12 @@ import socket
 import time
 import threading
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+CN_TZ = timezone(timedelta(hours=8))  # 中国时区 UTC+8
+
+def now_cn():
+    """返回中国当前时间"""
+    return datetime.now(CN_TZ)
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from urllib.request import Request, urlopen
@@ -132,7 +137,7 @@ def fetch_intraday_au():
         return []
 
     # 列名：datetime, open, high, low, close, volume, hold
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = now_cn().strftime("%Y-%m-%d")
     records = []
     for _, row in df.iterrows():
         try:
@@ -157,7 +162,7 @@ def fetch_intraday_etf():
         print(f"  [DEBUG] ETF intraday sina: {e}")
         return []
 
-    today_str = datetime.now().strftime("%Y-%m-%d")
+    today_str = now_cn().strftime("%Y-%m-%d")
     records = []
     for item in data:
         try:
@@ -277,7 +282,7 @@ def load_history_csv(symbol, days=None):
     df = pd.read_csv(filepath)
     df["date"] = df["date"].astype(str)
     if days:
-        cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+        cutoff = (now_cn() - timedelta(days=days)).strftime("%Y-%m-%d")
         df = df[df["date"] >= cutoff]
     return df.to_dict(orient="records")
 
@@ -363,7 +368,7 @@ class GoldHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/current":
             data = fetch_all_realtime()
             self._send_json({
-                "update_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "update_time": now_cn().strftime("%Y-%m-%d %H:%M:%S"),
                 "data": data,
             })
 
@@ -411,7 +416,7 @@ class GoldHandler(BaseHTTPRequestHandler):
         if self.path == "/api/refresh":
             try:
                 t_total = time.time()
-                update_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                update_time = now_cn().strftime("%Y-%m-%d %H:%M:%S")
                 symbols = ["GC", "AU", "518880"]
 
                 # 并发拉取实时行情 + 分时数据
@@ -446,7 +451,7 @@ class GoldHandler(BaseHTTPRequestHandler):
             self.send_error(404, "Not Found")
 
     def log_message(self, format, *args):
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {args[0]}")
+        print(f"[{now_cn().strftime('%H:%M:%S')}] {args[0]}")
 
 
 def get_local_ip():
