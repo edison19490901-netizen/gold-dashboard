@@ -3,131 +3,171 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>黄金价格实时看板</title>
+<title>黄金价格 · 实时看板</title>
 
 <link rel="apple-touch-icon" href="/icon-192.png">
-<meta name="theme-color" content="#0f1923">
+<meta name="theme-color" content="#fef9f2">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0f1923; color: #e0e0e0; min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(180deg, #fef9f2 0%, #fdf3e8 30%, #fef9f2 100%);
+    color: #2c2416;
+    min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
-    padding: 30px 20px 50px;
+    padding: 20px 16px 60px;
   }
 
+  /* ====== 顶部 ====== */
   .topbar {
-    width: 100%; max-width: 1100px;
+    width: 100%; max-width: 720px;
     display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 16px; margin-bottom: 10px;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 6px;
+  }
+  .topbar .brand {
+    display: flex; flex-direction: column; gap: 2px;
   }
   .topbar h1 {
-    font-size: 28px; font-weight: 700; letter-spacing: 2px;
-    background: linear-gradient(135deg, #f0c040, #d4942b);
+    font-size: 22px; font-weight: 800; letter-spacing: 1px;
+    background: linear-gradient(135deg, #c8963e, #8b5e2b);
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  .topbar .meta { font-size: 13px; color: #5a6e7e; }
+  .topbar .subtitle { font-size: 12px; color: #b8a088; letter-spacing: 1px; }
+
+  .topbar-right {
+    display: flex; align-items: center; gap: 10px;
+  }
 
   .btn-refresh {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 24px; border: 1px solid #f0c040; border-radius: 8px;
-    background: transparent; color: #f0c040;
-    font-size: 15px; font-weight: 600; cursor: pointer;
-    transition: all 0.25s; letter-spacing: 1px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 20px; border: 1px solid #d4b896; border-radius: 20px;
+    background: #fff; color: #8b5e2b;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.3s; letter-spacing: 1px;
+    box-shadow: 0 2px 8px rgba(139,94,43,0.08);
   }
-  .btn-refresh:hover { background: #f0c040; color: #0f1923; }
+  .btn-refresh:hover { background: #fdf3e8; border-color: #c8963e; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139,94,43,0.15); }
   .btn-refresh.spinning .icon { animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  .countdown-badge {
+    font-size: 11px; color: #b8a088; background: #fff;
+    border: 1px solid #f0e8db; border-radius: 12px;
+    padding: 4px 12px; min-width: 70px; text-align: center;
+  }
+
+  /* ====== 状态栏 ====== */
   .status-row {
-    width: 100%; max-width: 1100px;
+    width: 100%; max-width: 720px;
     display: flex; align-items: center; gap: 8px;
-    margin-bottom: 24px; font-size: 13px; color: #5a6e7e;
+    margin-bottom: 20px; font-size: 12px; color: #b8a088;
   }
-  .status-dot { width:8px; height:8px; border-radius:50%; background:#555; transition:background 0.3s; }
-  .status-dot.ok { background:#00d4a5; box-shadow:0 0 8px #00d4a5; }
-  .status-dot.err { background:#ff4757; box-shadow:0 0 8px #ff4757; }
+  .status-dot { width:6px; height:6px; border-radius:50%; background:#e0d5c5; transition:background 0.3s; }
+  .status-dot.ok { background:#a89060; box-shadow:0 0 6px #c8963e; }
+  .status-dot.err { background:#c0392b; box-shadow:0 0 6px #c0392b; }
 
-  /* 二维码 */
+  /* ====== 二维码 ====== */
   .qr-section {
-    width: 100%; max-width: 1100px;
-    display: flex; align-items: center; gap: 16px;
-    margin-bottom: 24px; padding: 14px 18px;
-    background: #1a2732; border: 1px dashed #354555;
-    border-radius: 10px;
+    width: 100%; max-width: 720px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 20px; padding: 12px 16px;
+    background: #fff; border: 1px solid #f0e8db;
+    border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.03);
   }
-  .qr-section .qr-label { font-size: 13px; color: #7a8e9e; line-height: 1.6; }
-  .qr-section .qr-label strong { color: #f0c040; }
-  #qrcode canvas { display: block; border-radius: 6px; }
-  #phoneUrl { color: #f0c040; font-size: 13px; word-break: break-all; }
+  .qr-section .qr-label { font-size: 12px; color: #b8a088; line-height: 1.6; }
+  .qr-section .qr-label strong { color: #8b5e2b; }
+  #qrcode canvas { display: block; border-radius: 8px; }
+  #phoneUrl { color: #8b5e2b; font-size: 12px; word-break: break-all; }
 
+  /* ====== 价格卡片 ====== */
   .cards {
-    width: 100%; max-width: 1100px;
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px; margin-bottom: 30px;
+    width: 100%; max-width: 720px;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-bottom: 24px;
+  }
+  @media (max-width: 640px) {
+    .cards { grid-template-columns: 1fr; }
   }
   .card {
-    background: #1a2732; border: 1px solid #253340;
-    border-radius: 14px; padding: 22px 20px 18px;
+    background: #fff;
+    border: 1px solid #f0e8db;
+    border-radius: 18px; padding: 18px 16px 14px;
     position: relative; overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: transform 0.25s, box-shadow 0.25s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    text-align: center;
   }
-  .card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
-  .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
-  .card.gc::before    { background: linear-gradient(90deg,#f0c040,#d4942b); }
-  .card.au::before    { background: linear-gradient(90deg,#e85050,#c0392b); }
-  .card.etf::before   { background: linear-gradient(90deg,#4da6ff,#2979ff); }
-  .card .sym  { font-size:11px; letter-spacing:2px; color:#5a6e7e; margin-bottom:4px; }
-  .card .name { font-size:18px; font-weight:600; margin-bottom:12px; color:#ccc; }
-  .card .price { font-size:38px; font-weight:700; color:#fff; }
-  .card .price .unit { font-size:14px; color:#6b7c8a; font-weight:400; margin-left:2px; }
-  .card .change { display:flex; align-items:center; gap:10px; margin-top:8px; font-size:15px; font-weight:600; }
-  .card .change .up   { color:#ff4757; }
-  .card .change .down { color:#2ed573; }
-  .card .change .flat { color:#6b7c8a; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .card::before { content:''; position:absolute; top:0; left:12px; right:12px; height:2px; border-radius:0 0 2px 2px; }
+  .card.gc::before    { background: linear-gradient(90deg, #c8963e, #a67c2e); }
+  .card.au::before    { background: linear-gradient(90deg, #d4786e, #b85450); }
+  .card.etf::before   { background: linear-gradient(90deg, #7eb8c9, #5a9aad); }
 
+  .card .sym  { font-size:10px; letter-spacing:2px; color:#c4b098; margin-bottom:4px; text-transform:uppercase; }
+  .card .name { font-size:15px; font-weight:600; margin-bottom:10px; color:#3d3226; }
+  .card .price-wrap { display:flex; align-items:baseline; justify-content:center; gap:2px; }
+  .card .price { font-size:34px; font-weight:800; color:#2c2416; }
+  .card .price .unit { font-size:13px; color:#b8a088; font-weight:400; margin-left:1px; }
+  .card .change { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:6px; font-size:13px; font-weight:600; }
+  .card .change .up   { color:#c0392b; }
+  .card .change .down { color:#27ae60; }
+  .card .change .flat { color:#b8a088; }
+
+  /* ====== 图表区块 ====== */
   .charts {
-    width: 100%; max-width: 1100px;
-    display: flex; flex-direction: column; gap: 24px;
+    width: 100%; max-width: 720px;
+    display: flex; flex-direction: column; gap: 20px;
   }
   .chart-block {
-    background: #1a2732; border:1px solid #253340;
-    border-radius: 14px; padding: 18px 18px 12px;
+    background: #fff; border: 1px solid #f0e8db;
+    border-radius: 18px; padding: 18px 18px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.03);
   }
   .chart-header {
     display: flex; align-items: center; justify-content: space-between;
-    flex-wrap: wrap; gap: 10px; margin-bottom: 6px;
+    flex-wrap: wrap; gap: 8px; margin-bottom: 4px;
   }
-  .chart-header .title { font-size: 16px; font-weight: 600; color: #ccc; }
+  .chart-header .title { font-size: 15px; font-weight: 700; color: #3d3226; }
+  .intraday-header { display: flex; align-items: center; margin: 16px 0 4px; }
+  .intraday-header .title { font-size: 12px; font-weight: 500; color: #b8a088; }
+
   .period-btns { display: flex; gap: 4px; }
   .period-btns button {
-    padding: 5px 14px; border-radius: 5px; border:1px solid #354555;
-    background: transparent; color: #7a8e9e; font-size: 12px;
-    cursor: pointer; transition: all 0.2s;
+    padding: 4px 12px; border-radius: 12px; border: 1px solid #f0e8db;
+    background: #fef9f2; color: #b8a088; font-size: 11px;
+    cursor: pointer; transition: all 0.2s; font-weight: 500;
   }
   .period-btns button.active {
-    background: #f0c040; color: #0f1923; border-color: #f0c040; font-weight: 600;
+    background: #8b5e2b; color: #fff; border-color: #8b5e2b; font-weight: 600;
   }
-  .period-btns button:hover:not(.active) { border-color: #5a7e8e; color: #ccc; }
-  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .period-btns button:hover:not(.active) { border-color: #d4b896; color: #8b5e2b; }
+
+  .chart-wrap { position: relative; width: 100%; height: 250px; }
+  .intraday-wrap { height: 170px; }
   .chart-wrap canvas { width: 100% !important; }
 
-  .footer { margin-top: 30px; font-size: 12px; color: #3d4f5e; }
+  /* ====== 底部 ====== */
+  .footer { margin-top: 28px; font-size: 11px; color: #d4c4b0; letter-spacing: 1px; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div>
-    <h1>GOLD PRICE · 实时金价看板</h1>
-    <div class="meta">日线数据本地存储 · 手动更新</div>
+  <div class="brand">
+    <h1>✨ 黄金价格 · 实时看板</h1>
+    <div class="subtitle">每分钟自动更新 · 数据本地存储</div>
   </div>
-  <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">
-    <span class="icon">🔄</span> 更新数据
-  </button>
+  <div class="topbar-right">
+    <span class="countdown-badge" id="countdownText"></span>
+    <button class="btn-refresh" id="btnRefresh" onclick="refreshAll()">
+      <span class="icon">🔄</span> 刷新
+    </button>
+  </div>
 </div>
 
 <div class="status-row">
@@ -135,12 +175,11 @@
   <span id="statusText">就绪</span>
 </div>
 
-<!-- 📱 手机扫码区 -->
 <div class="qr-section" id="qrSection">
   <div id="qrcode"></div>
   <div class="qr-label" id="qrLabel">
-    <strong>📱 手机查看</strong><br>
-    同一WiFi下用手机扫码，或浏览器打开：<br>
+    <strong>📱 手机扫码查看</strong><br>
+    同一WiFi下浏览器打开：<br>
     <span id="phoneUrl">加载中...</span>
   </div>
 </div>
@@ -149,26 +188,26 @@
   <div class="card gc" id="card-GC">
     <div class="sym">COMEX · GC</div>
     <div class="name">国际现货黄金</div>
-    <div class="price">--<span class="unit">美元/盎司</span></div>
+    <div class="price-wrap"><span class="price">--</span><span class="unit">美元/盎司</span></div>
     <div class="change">--</div>
   </div>
   <div class="card au" id="card-AU">
     <div class="sym">SHFE · AU</div>
     <div class="name">沪金期货主力</div>
-    <div class="price">--<span class="unit">元/克</span></div>
+    <div class="price-wrap"><span class="price">--</span><span class="unit">元/克</span></div>
     <div class="change">--</div>
   </div>
   <div class="card etf" id="card-518880">
     <div class="sym">SSE · 518880</div>
     <div class="name">华安黄金ETF</div>
-    <div class="price">--<span class="unit">元/份</span></div>
+    <div class="price-wrap"><span class="price">--</span><span class="unit">元/份</span></div>
     <div class="change">--</div>
   </div>
 </div>
 
 <div class="charts" id="charts"></div>
 
-<div class="footer">Powered by akshare · 数据本地存储</div>
+<div class="footer">Powered by akshare · Chart.js · 本地服务</div>
 
 <script>
 const API_BASE = '';
@@ -185,7 +224,14 @@ const PERIODS = [
 const DEFAULT_PERIOD = 1;
 
 const charts = {};
+const intraCharts = {};
 const activePeriod = {};
+
+// GC 分时累积数据 & 自动刷新
+const AUTO_REFRESH_SEC = 60;
+let gcPriceHistory = [];
+let refreshCountdown = AUTO_REFRESH_SEC;
+let countdownInterval = null;
 
 // ---- 二维码 ----
 async function setupQR() {
@@ -196,7 +242,7 @@ async function setupQR() {
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
       text: url, width: 100, height: 100,
-      colorDark: '#1a2732', colorLight: '#f0c040',
+      colorDark: '#3d3226', colorLight: '#fef9f2',
     });
   } catch(e) {
     document.getElementById('qrSection').style.display = 'none';
@@ -208,7 +254,7 @@ function setStatus(ok, text) {
   const dot = document.getElementById('statusDot');
   const txt = document.getElementById('statusText');
   dot.className = 'status-dot ' + (ok ? 'ok' : 'err');
-  txt.textContent = text || (ok ? '就绪' : '错误');
+  txt.textContent = text || (ok ? '已连接' : '连接失败');
 }
 
 async function apiGet(path) {
@@ -230,14 +276,15 @@ function updateCards(dataList) {
     const priceEl = card.querySelector('.price');
     const changeEl = card.querySelector('.change');
     const unitEl = card.querySelector('.unit');
-    priceEl.childNodes[0].nodeValue = item.price.toFixed(2);
+    priceEl.textContent = item.price.toFixed(item.symbol === '518880' ? 3 : 2);
     unitEl.textContent = item.unit;
     const c = item.change, p = item.change_percent;
     const isUp = c > 0, isDown = c < 0;
     const cls = isUp ? 'up' : isDown ? 'down' : 'flat';
     const arrow = isUp ? '▲' : isDown ? '▼' : '—';
     const sign = isUp ? '+' : '';
-    changeEl.innerHTML = `<span class="${cls}">${arrow} ${sign}${c.toFixed(2)}</span> <span class="${cls}">${sign}${p.toFixed(2)}%</span>`;
+    const dec = item.symbol === '518880' ? 3 : 2;
+    changeEl.innerHTML = `<span class="${cls}">${arrow} ${sign}${c.toFixed(dec)}</span> <span class="${cls}">${sign}${p.toFixed(dec)}%</span>`;
   });
 }
 
@@ -249,14 +296,21 @@ function buildChartBlocks() {
     activePeriod[sym.id] = DEFAULT_PERIOD;
     const block = document.createElement('div');
     block.className = 'chart-block';
+    const chartTitle = sym.id === 'GC' ? '📈 ' + sym.name + ' · 日线'
+      : sym.id === 'AU' ? '🔥 ' + sym.name + ' · 日线'
+      : '💎 ' + sym.name + ' · 日线';
+    const intraTitle = sym.id === 'GC' ? '⏱ 实时累积分时（每秒采集）'
+      : '⏱ ' + sym.name + ' · 当日分时';
     block.innerHTML = `
       <div class="chart-header">
-        <span class="title">📈 ${sym.name} · 日线</span>
+        <span class="title">${chartTitle}</span>
         <div class="period-btns" data-symbol="${sym.id}">
           ${PERIODS.map((p,i) => `<button data-idx="${i}" class="${i===DEFAULT_PERIOD?'active':''}">${p.label}</button>`).join('')}
         </div>
       </div>
-      <div class="chart-wrap"><canvas id="chart-${sym.id}"></canvas></div>`;
+      <div class="chart-wrap"><canvas id="chart-${sym.id}"></canvas></div>
+      <div class="intraday-header"><span class="title">${intraTitle}</span></div>
+      <div class="chart-wrap intraday-wrap"><canvas id="intraday-${sym.id}"></canvas></div>`;
     container.appendChild(block);
     block.querySelectorAll('.period-btns button').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -269,27 +323,62 @@ function buildChartBlocks() {
       });
     });
     const ctx = document.getElementById('chart-' + sym.id).getContext('2d');
-    const color = sym.id === 'GC' ? '#f0c040' : sym.id === 'AU' ? '#e85050' : '#4da6ff';
+    const color = sym.id === 'GC' ? '#c8963e' : sym.id === 'AU' ? '#d4786e' : '#7eb8c9';
+    const volColor = sym.id === 'AU' ? 'rgba(212,120,110,0.25)' : 'rgba(126,184,201,0.30)';
+    const hasVolume = sym.id !== 'GC';  // GC 国际期货无成交量数据
+
+    const datasets = [
+      { label:sym.chartLabel, data:[], borderColor:color, backgroundColor:color+'15', borderWidth:2, pointRadius:1.5, pointHoverRadius:5, fill:true, tension:0.1, yAxisID:'y', order:1 }
+    ];
+    if (hasVolume) {
+      datasets.push(
+        { label:'成交量', data:[], type:'bar', backgroundColor:volColor, yAxisID:'y1', borderRadius:2, order:0, borderWidth:0 }
+      );
+    }
+
     charts[sym.id] = new Chart(ctx, {
       type: 'line',
+      data: { labels:[], datasets },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { labels:{ color:'#b8a088', usePointStyle:true, pointStyleWidth:6, padding:16, font:{size:10} } },
+          tooltip: {
+            backgroundColor:'#fff', borderColor:'#f0e8db', borderWidth:1,
+            titleColor:'#3d3226', bodyColor:'#5c4a3a',
+            callbacks: { label: ctx => ctx.datasetIndex===1 && hasVolume ? '成交量: '+(ctx.raw/10000).toFixed(1)+'万手' : ctx.dataset.label+': '+ctx.raw.toFixed(ctx.dataset.label.includes('ETF')?3:2) }
+          }
+        },
+        scales: {
+          x: { ticks:{ color:'#c4b098', maxTicksLimit:10, font:{size:9} }, grid:{ color:'rgba(0,0,0,0.03)' }, border:{ color:'#f0e8db' } },
+          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:9}, callback:v => v.toFixed(sym.id==='518880'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
+          y1: { type:'linear', position:'right', ticks:{ color:'#c4b098', font:{size:8}, callback:v => (v/10000).toFixed(0)+'万' }, grid:{ display:false }, border:{ color:'#f0e8db' } },
+        },
+      },
+    });
+
+    // 当日分时曲线（三个品种都有）
+    const intraCtx = document.getElementById('intraday-' + sym.id).getContext('2d');
+    intraCharts[sym.id] = new Chart(intraCtx, {
+      type: 'line',
       data: { labels:[], datasets:[
-        { label:sym.chartLabel, data:[], borderColor:color, backgroundColor:color+'20', borderWidth:2, pointRadius:1.5, pointHoverRadius:5, fill:true, tension:0.1, yAxisID:'y' },
-        { label:'成交量', data:[], type:'bar', backgroundColor:'rgba(255,255,255,0.06)', yAxisID:'y1' }
+        { label:sym.name+' 分时', data:[], borderColor:color, backgroundColor:color+'15', borderWidth:1.5, pointRadius:0, pointHoverRadius:4, fill:true, tension:0.3 }
       ]},
       options: {
         responsive:true, maintainAspectRatio:false,
         interaction: { mode:'index', intersect:false },
         plugins: {
-          legend: { labels:{ color:'#6b7c8a', usePointStyle:true, pointStyleWidth:8, padding:20, font:{size:11} } },
+          legend: { display: false },
           tooltip: {
-            backgroundColor:'#1a2732', borderColor:'#354555', borderWidth:1, titleColor:'#ccc', bodyColor:'#ccc',
-            callbacks: { label: ctx => ctx.datasetIndex===1 ? '成交量: '+(ctx.raw/10000).toFixed(1)+'万手' : ctx.dataset.label+': '+ctx.raw.toFixed(2) }
+            backgroundColor:'#fff', borderColor:'#f0e8db', borderWidth:1,
+            titleColor:'#3d3226', bodyColor:'#5c4a3a',
+            callbacks: { label: ctx => ctx.dataset.label+': '+ctx.raw.toFixed(ctx.dataset.label.includes('ETF')?3:2) }
           }
         },
         scales: {
-          x: { ticks:{ color:'#5a6e7e', maxTicksLimit:10, font:{size:10} }, grid:{ color:'rgba(255,255,255,0.03)' } },
-          y: { type:'linear', position:'left', ticks:{ color:'#7a8e9e', font:{size:10}, callback:v => v.toFixed(sym.id==='518880'?2:0) }, grid:{ color:'rgba(255,255,255,0.04)' } },
-          y1: { type:'linear', position:'right', ticks:{ color:'#5a6e7e', font:{size:9}, callback:v => (v/10000).toFixed(0)+'万' }, grid:{ display:false } },
+          x: { ticks:{ color:'#c4b098', maxTicksLimit:8, font:{size:8}, maxRotation:0 }, grid:{ color:'rgba(0,0,0,0.03)' }, border:{ color:'#f0e8db' } },
+          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:8}, callback:v => v.toFixed(sym.id==='518880'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
         },
       },
     });
@@ -308,45 +397,145 @@ async function loadHistory(symbol, days) {
   } catch(e) { console.error('加载日线失败:', symbol, e); }
 }
 
+async function loadIntraday(symbol) {
+  try {
+    const json = await apiGet(`/api/intraday?symbol=${symbol}`);
+    const chart = intraCharts[symbol];
+    if (!chart || !json.data || json.data.length === 0) return;
+    chart.data.labels = json.data.map(d => d.time);
+    chart.data.datasets[0].data = json.data.map(d => d.price);
+    chart.update();
+  } catch(e) { console.error('加载分时失败:', symbol, e); }
+}
+
+function updateIntradayFromData(symbol, records) {
+  const chart = intraCharts[symbol];
+  if (!chart || !records || records.length === 0) return;
+  chart.data.labels = records.map(d => d.time);
+  chart.data.datasets[0].data = records.map(d => d.price);
+  chart.update('none');  // 静默更新，不触发动画
+}
+
 // ---- 初始加载 & 刷新 ----
 async function loadAll() {
   setStatus(false, '加载中...');
   try {
-    const [current] = await Promise.all([
-      apiGet('/api/current'),
+    const current = await apiGet('/api/current');
+    updateCards(current.data);
+
+    // GC 初始分时累积
+    const gcItem = current.data.find(d => d.symbol === 'GC');
+    if (gcItem) {
+      const now = new Date();
+      const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+      gcPriceHistory.push({ time: timeStr, price: gcItem.price });
+    }
+
+    document.getElementById('statusText').textContent = '上次更新: ' + (current.update_time || '--');
+    setStatus(true, '');
+
+    // 图表后台异步加载
+    Promise.all([
       loadHistory('GC',     PERIODS[activePeriod['GC']].days),
       loadHistory('AU',     PERIODS[activePeriod['AU']].days),
       loadHistory('518880', PERIODS[activePeriod['518880']].days),
-    ]);
-    updateCards(current.data);
-    document.getElementById('statusText').textContent = '上次更新: ' + (current.update_time || '--');
-    setStatus(true, '');
+      loadIntraday('GC'),
+      loadIntraday('AU'),
+      loadIntraday('518880'),
+    ]).catch(e => console.error('图表加载失败:', e));
   } catch(e) { console.error(e); setStatus(false, '连接失败 — 请确认服务已启动'); }
+}
+
+function updateChartFromData(symbol, records) {
+  const chart = charts[symbol];
+  if (!chart || !records) return;
+  chart.data.labels = records.map(d => d.date);
+  chart.data.datasets[0].data = records.map(d => d.close);
+  if (chart.data.datasets.length > 1) {
+    chart.data.datasets[1].data = records.map(d => d.volume);
+  }
+  chart.update('none');
 }
 
 async function refreshAll() {
   const btn = document.getElementById('btnRefresh');
   btn.classList.add('spinning'); btn.disabled = true;
-  setStatus(false, '正在拉取数据...');
+  setStatus(false, '刷新中...');
   try {
     const result = await apiPost('/api/refresh');
     if (result.success) {
       updateCards(result.latest);
-      await Promise.all([
-        loadHistory('GC',     PERIODS[activePeriod['GC']].days),
-        loadHistory('AU',     PERIODS[activePeriod['AU']].days),
-        loadHistory('518880', PERIODS[activePeriod['518880']].days),
-      ]);
-      setStatus(true, '更新成功 — ' + result.update_time);
-    } else { setStatus(false, '更新失败: ' + (result.error || '未知错误')); }
-  } catch(e) { console.error(e); setStatus(false, '请求失败 — 请确认服务已启动'); }
-  finally { btn.classList.remove('spinning'); btn.disabled = false; }
+
+      // GC 分时累积
+      const gcItem = result.latest.find(d => d.symbol === 'GC');
+      if (gcItem) {
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        const last = gcPriceHistory[gcPriceHistory.length - 1];
+        if (!last || last.time !== timeStr) {
+          gcPriceHistory.push({ time: timeStr, price: gcItem.price });
+          if (gcPriceHistory.length > 1440) gcPriceHistory = gcPriceHistory.slice(-1440);
+        }
+      }
+
+      setStatus(true, '✓ 已更新 — ' + result.update_time);
+      btn.classList.remove('spinning'); btn.disabled = false;
+      refreshCountdown = AUTO_REFRESH_SEC; updateCountdown();
+
+      // 图表更新
+      requestAnimationFrame(() => {
+        if (result.history) {
+          Object.keys(result.history).forEach(sym => {
+            const records = result.history[sym];
+            const days = PERIODS[activePeriod[sym]].days;
+            const cutoff = records.slice(-days);
+            updateChartFromData(sym, cutoff);
+          });
+        }
+        // AU/ETF 分时每条刷新都更新
+        if (result.intraday) {
+          Object.keys(result.intraday).forEach(sym => {
+            updateIntradayFromData(sym, result.intraday[sym]);
+          });
+        }
+        // GC 分时累积
+        if (gcPriceHistory.length > 0) {
+          updateIntradayFromData('GC', gcPriceHistory);
+        }
+      });
+    } else {
+      setStatus(false, '更新失败: ' + (result.error || '未知错误'));
+      btn.classList.remove('spinning'); btn.disabled = false;
+    }
+  } catch(e) {
+    console.error(e); setStatus(false, '请求失败 — 请确认服务已启动');
+    btn.classList.remove('spinning'); btn.disabled = false;
+  }
+}
+
+// ---- 自动刷新 ----
+function updateCountdown() {
+  const el = document.getElementById('countdownText');
+  if (el) el.textContent = refreshCountdown + 's';
+}
+
+function startAutoRefresh() {
+  updateCountdown();
+  countdownInterval = setInterval(() => {
+    refreshCountdown--;
+    updateCountdown();
+    if (refreshCountdown <= 0) {
+      refreshCountdown = AUTO_REFRESH_SEC;
+      refreshAll().then(() => updateCountdown());
+    }
+  }, 1000);
 }
 
 // ---- 启动 ----
 setupQR();
 buildChartBlocks();
 loadAll();
+startAutoRefresh();
 
 </script>
 </body>
