@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>黄金价格 · 实时看板</title>
+<title>Gold Price Update</title>
 
+<link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/gold_icon.png">
 <link rel="apple-touch-icon" href="/gold_icon.png">
 <meta name="theme-color" content="#fef9f2">
@@ -198,9 +199,9 @@
     <div class="price-wrap"><span class="price">--</span><span class="unit">元/克</span></div>
     <div class="change">--</div>
   </div>
-  <div class="card etf" id="card-518880">
-    <div class="sym">SSE · 518880</div>
-    <div class="name">华安黄金ETF</div>
+  <div class="card etf" id="card-518680">
+    <div class="sym">SSE · 518680</div>
+    <div class="name">富国上海金ETF</div>
     <div class="price-wrap"><span class="price">--</span><span class="unit">元/份</span></div>
     <div class="change">--</div>
   </div>
@@ -215,7 +216,7 @@ const API_BASE = '';
 const SYMBOLS = [
   { id:'GC',    name:'COMEX黄金',   unit:'美元/盎司', cardClass:'gc',    chartLabel:'国际金价 (美元/盎司)' },
   { id:'AU',    name:'沪金主力',    unit:'元/克',     cardClass:'au',    chartLabel:'沪金期货 (元/克)' },
-  { id:'518880',name:'华安黄金ETF', unit:'元/份',     cardClass:'etf',   chartLabel:'黄金ETF (元/份)' },
+  { id:'518680',name:'富国上海金ETF', unit:'元/份',     cardClass:'etf',   chartLabel:'黄金ETF (元/份)' },
 ];
 const PERIODS = [
   { label:'1个月', days:22 },
@@ -277,14 +278,14 @@ function updateCards(dataList) {
     const priceEl = card.querySelector('.price');
     const changeEl = card.querySelector('.change');
     const unitEl = card.querySelector('.unit');
-    priceEl.textContent = item.price.toFixed(item.symbol === '518880' ? 3 : 2);
+    priceEl.textContent = item.price.toFixed(item.symbol === '518680' ? 3 : 2);
     unitEl.textContent = item.unit;
     const c = item.change, p = item.change_percent;
     const isUp = c > 0, isDown = c < 0;
     const cls = isUp ? 'up' : isDown ? 'down' : 'flat';
     const arrow = isUp ? '▲' : isDown ? '▼' : '—';
     const sign = isUp ? '+' : '';
-    const dec = item.symbol === '518880' ? 3 : 2;
+    const dec = item.symbol === '518680' ? 3 : 2;
     changeEl.innerHTML = `<span class="${cls}">${arrow} ${sign}${c.toFixed(dec)}</span> <span class="${cls}">${sign}${p.toFixed(dec)}%</span>`;
   });
 }
@@ -353,7 +354,7 @@ function buildChartBlocks() {
         },
         scales: {
           x: { ticks:{ color:'#c4b098', maxTicksLimit:10, font:{size:9} }, grid:{ color:'rgba(0,0,0,0.03)' }, border:{ color:'#f0e8db' } },
-          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:9}, callback:v => v.toFixed(sym.id==='518880'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
+          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:9}, callback:v => v.toFixed(sym.id==='518680'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
           y1: { type:'linear', position:'right', ticks:{ color:'#c4b098', font:{size:8}, callback:v => (v/10000).toFixed(0)+'万' }, grid:{ display:false }, border:{ color:'#f0e8db' } },
         },
       },
@@ -379,7 +380,7 @@ function buildChartBlocks() {
         },
         scales: {
           x: { ticks:{ color:'#c4b098', maxTicksLimit:8, font:{size:8}, maxRotation:0 }, grid:{ color:'rgba(0,0,0,0.03)' }, border:{ color:'#f0e8db' } },
-          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:8}, callback:v => v.toFixed(sym.id==='518880'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
+          y: { type:'linear', position:'left', ticks:{ color:'#b8a088', font:{size:8}, callback:v => v.toFixed(sym.id==='518680'?3:0) }, grid:{ color:'rgba(0,0,0,0.04)' }, border:{ color:'#f0e8db' } },
         },
       },
     });
@@ -439,10 +440,10 @@ async function loadAll() {
     Promise.all([
       loadHistory('GC',     PERIODS[activePeriod['GC']].days),
       loadHistory('AU',     PERIODS[activePeriod['AU']].days),
-      loadHistory('518880', PERIODS[activePeriod['518880']].days),
+      loadHistory('518680', PERIODS[activePeriod['518680']].days),
       loadIntraday('GC'),
       loadIntraday('AU'),
-      loadIntraday('518880'),
+      loadIntraday('518680'),
     ]).catch(e => console.error('图表加载失败:', e));
   } catch(e) { console.error(e); setStatus(false, '连接失败 — 请确认服务已启动'); }
 }

@@ -70,10 +70,10 @@ def fetch_realtime_au():
 def fetch_realtime_etf():
     """黄金 ETF 实时价"""
     df = ak.fund_etf_spot_em()
-    row = df[df["代码"] == "518880"].iloc[0]
+    row = df[df["代码"] == "518680"].iloc[0]
     return {
-        "symbol": "518880",
-        "name": "华安黄金ETF",
+        "symbol": "518680",
+        "name": "富国上海金ETF",
         "type": "黄金ETF",
         "price": round(float(row["最新价"]), 3),
         "change": round(float(row["涨跌额"]), 3),
@@ -157,7 +157,7 @@ def fetch_intraday_au():
 def fetch_intraday_etf():
     """黄金 ETF 当日分时数据（新浪 API，绕过 eastmoney 代理问题）"""
     try:
-        data = _sina_intraday("sh518880", scale=5)  # 新浪只支持5分钟线，1分钟返回null
+        data = _sina_intraday("sh518680", scale=5)  # 新浪只支持5分钟线，1分钟返回null
     except Exception as e:
         print(f"  [DEBUG] ETF intraday sina: {e}")
         return []
@@ -219,7 +219,7 @@ def fetch_all_intraday():
     fetchers = {
         "GC": fetch_intraday_gc,
         "AU": fetch_intraday_au,
-        "518880": fetch_intraday_etf,
+        "518680": fetch_intraday_etf,
     }
     with ThreadPoolExecutor(max_workers=3) as pool:
         futures = {pool.submit(f): sym for sym, f in fetchers.items()}
@@ -258,8 +258,8 @@ def fetch_and_save_history(symbol):
         })
         df = df[["date", "open", "high", "low", "close", "volume"]]
 
-    elif symbol == "518880":
-        df = ak.fund_etf_hist_sina(symbol="sh518880")
+    elif symbol == "518680":
+        df = ak.fund_etf_hist_sina(symbol="sh518680")
         df = df.rename(columns={
             "date": "date", "open": "open", "high": "high",
             "low": "low", "close": "close", "volume": "volume"
@@ -289,7 +289,7 @@ def load_history_csv(symbol, days=None):
 
 def refresh_history_background():
     """后台线程：检查并更新过期历史数据。不阻塞前端响应。"""
-    symbols = ["GC", "AU", "518880"]
+    symbols = ["GC", "AU", "518680"]
     for sym in symbols:
         filepath = os.path.join(CSV_DIR, f"history_{sym}.csv")
         need_fetch = True
@@ -392,7 +392,7 @@ class GoldHandler(BaseHTTPRequestHandler):
                 fetchers = {
                     "GC": fetch_intraday_gc,
                     "AU": fetch_intraday_au,
-                    "518880": fetch_intraday_etf,
+                    "518680": fetch_intraday_etf,
                 }
                 f = fetchers.get(symbol)
                 records = f() if f else []
@@ -417,7 +417,7 @@ class GoldHandler(BaseHTTPRequestHandler):
             try:
                 t_total = time.time()
                 update_time = now_cn().strftime("%Y-%m-%d %H:%M:%S")
-                symbols = ["GC", "AU", "518880"]
+                symbols = ["GC", "AU", "518680"]
 
                 # 并发拉取实时行情 + 分时数据
                 with ThreadPoolExecutor(max_workers=6) as pool:
@@ -476,7 +476,7 @@ def main():
     print("=" * 50)
 
     print("[INIT] 检查日线数据...")
-    for sym in ["GC", "AU", "518880"]:
+    for sym in ["GC", "AU", "518680"]:
         csv_path = os.path.join(CSV_DIR, f"history_{sym}.csv")
         if not os.path.exists(csv_path):
             try:

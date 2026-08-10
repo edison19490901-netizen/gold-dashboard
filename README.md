@@ -45,4 +45,4 @@ python gold_server.py
 通过 [akshare](https://github.com/akfamily/akshare) 抓取：
 - COMEX 黄金（新浪财经）
 - 沪金期货主力（新浪财经）
-- 华安黄金 ETF 518880（新浪财经）
+- 富国上海金 ETF 518680（新浪财经）
