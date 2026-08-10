@@ -362,7 +362,7 @@ class GoldHandler(BaseHTTPRequestHandler):
             self._send_file(parsed.path, "application/json")
         elif parsed.path == "/sw.js":
             self._send_file(parsed.path, "application/javascript")
-        elif parsed.path in ["/icon-192.png", "/icon-512.png"]:
+        elif parsed.path in ["/icon-192.png", "/icon-512.png", "/gold_icon.png"]:
             self._send_file(parsed.path, "image/png")
 
         elif parsed.path == "/api/current":
